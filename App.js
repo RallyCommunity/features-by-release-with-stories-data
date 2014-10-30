@@ -15,7 +15,7 @@ Ext.define('CustomApp', {
     _makeStore: function(){
          Ext.create('Rally.data.WsapiDataStore', {
             model: 'PortfolioItem/Feature',
-            fetch: ['FormattedID','Name','State'],
+            fetch: ['FormattedID','Name','State','Priority'],
             pageSize: 100,
             autoLoad: true,
             filters: [this.getContext().getTimeboxScope().getQueryFilter()],
@@ -34,7 +34,7 @@ Ext.define('CustomApp', {
                 var features = [];
                 var pendingstories = data.length;
                 if (data.length ===0) {
-                        this._createGrid(features);  //to force refresh on grid when there are no features in iteration
+                        this._createGrid(features);  //to force refresh on grid when there are no features in release
                 }
                 _.each(data, function(feature) {
                             var f  = {
@@ -42,6 +42,7 @@ Ext.define('CustomApp', {
                                 Name: feature.get('Name'),
                                 _ref: feature.get("_ref"),
                                 State: (feature.get("State") && feature.get("State") .Name) || 'None',
+                                Priority: feature.get("Priority") || 'None',
                                 UserStories: []
                             };
                         var stories = feature.getCollection('UserStories', {fetch: ['FormattedID','ScheduleState','Owner']});
@@ -71,7 +72,8 @@ Ext.define('CustomApp', {
         var featureStore = Ext.create('Rally.data.custom.Store', {
                 data: features,
                 pageSize: 100,
-                remoteSort:false
+                remoteSort:false,
+                groupField: 'Priority'
             });
         
         if (!this.down('#fgrid')){
@@ -79,6 +81,7 @@ Ext.define('CustomApp', {
             xtype: 'rallygrid',
             itemId: 'fgrid',
             store: featureStore,
+            features: [{ftype:'groupingsummary'}],
             columnCfgs: [
                 {
                    text: 'Formatted ID', dataIndex: 'FormattedID', xtype: 'templatecolumn',
@@ -91,11 +94,14 @@ Ext.define('CustomApp', {
                     text: 'State', dataIndex: 'State'
                 },
                 {
+                    text: 'Priority', dataIndex: 'Priority'
+                },
+                {
                     text: 'User Stories', dataIndex: 'UserStories', flex: 1,
                     renderer: function(value) {
                         var html = [];
                         _.each(value, function(userstory){
-                            html.push('<a href="' + Rally.nav.Manager.getDetailUrl(userstory) + '">' + userstory.FormattedID + '</a>' + ' ScheduleState: ' + userstory.ScheduleState + ' Owner: ' + userstory.Owner)
+                            html.push('<a href="' + Rally.nav.Manager.getDetailUrl(userstory) + '">' + userstory.FormattedID + '</a>' + ' ScheduleState: ' + userstory.ScheduleState + ' Owner: ' + userstory.Owner);
                         });
                         return html.join('<br />');
                     }
